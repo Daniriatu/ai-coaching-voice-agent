@@ -8,17 +8,38 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/convex/_generated/api";
 import { CoachingExpert } from "@/services/Options";
 import { DialogClose } from "@radix-ui/react-dialog";
+import { useMutation } from "convex/react";
+import { LoaderCircle } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import React, { useState } from "react";
 
 function UserInputDialog({ children, coachingOption }) {
   const [selectedExpert, setSelectedExpert] = useState();
   const [topic, setTopic] = useState();
+  const createDiscussionRoom = useMutation(api.DiscussionRoom.CreateNewRoom);
+  const [loading, setLoading] = useState(false);
+  const [openDialgo, setOpenDialog] = useState(false);
+  const router = useRouter();
+
+  const OnClickNext = async () => {
+    setLoading(true);
+    const result = await createDiscussionRoom({
+      topic: topic,
+      coachingOption: coachingOption?.name,
+      expertName: selectedExpert,
+    });
+    console.log(result);
+    setLoading(false);
+    setOpenDialog(false);
+    router.push("/discussion-room/" + result);
+  };
   return (
-    <Dialog>
+    <Dialog open={openDialgo} onOpenChange={setOpenDialog}>
       <DialogTrigger>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -62,9 +83,11 @@ function UserInputDialog({ children, coachingOption }) {
                   </Button>
                 </DialogClose>
                 <Button
-                  disabled={!topic || !selectedExpert}
+                  disabled={!topic || !selectedExpert || loading}
                   className="cursor-pointer"
+                  onClick={OnClickNext}
                 >
+                  {loading && <LoaderCircle className="animate-spin" />}
                   Next
                 </Button>
               </div>
