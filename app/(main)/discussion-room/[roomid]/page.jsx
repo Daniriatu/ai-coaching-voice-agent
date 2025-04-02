@@ -1,8 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { getToken } from "@/services/GlobalServices";
 import { CoachingExpert } from "@/services/Options";
 import { UserButton } from "@stackframe/stack";
+import { AssemblyAI, RealtimeTranscriber } from "assemblyai";
 import { useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -26,6 +28,7 @@ function DiscussionRoom() {
   const [enableMic, setEnableMic] = useState(false);
   const recorder = useRef(null);
   const silenceTimeout = useRef(null);
+  const realtimeTranscriber = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -52,6 +55,18 @@ function DiscussionRoom() {
       setEnableMic(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Initialize Assembly AI
+      realtimeTranscriber.current = new RealtimeTranscriber({
+        token: await getToken,
+        sample_rate: 16_000,
+      });
+
+      realtimeTranscriber.current.on("transcript", async (transcript) => {
+        console.log(transcript);
+      });
+
+      await realtimeTranscriber.current.connect();
 
       // Initialize RecordRTC
       const { default: RecordRTC } = await import("recordrtc");
